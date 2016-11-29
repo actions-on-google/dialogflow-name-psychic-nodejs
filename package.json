@@ -1,0 +1,28 @@
+{
+  "name": "name-psychic",
+  "description": "Have your mind read on the spot",
+  "version": "0.0.1",
+  "private": true,
+  "license": "Apache Version 2.0",
+  "author": "Google Inc.",
+  "engines": {
+    "node": "~6.0"
+  },
+  "scripts": {
+    "lint": "semistandard --fix \"**/*.js\"",
+    "start": "node app.js",
+    "monitor": "nodemon app.js",
+    "deploy": "gcloud app deploy"
+  },
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "crypto-js": "~3.1.7",
+    "debug": "^2.2.0",
+    "express": "^4.13.4",
+    "firebase-admin": "^4.0.2",
+    "actions-on-google": "^1.0.0"
+  },
+  "devDependencies": {
+    "semistandard": "^9.1.0"
+  }
+}
