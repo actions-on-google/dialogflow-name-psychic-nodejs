@@ -52,6 +52,10 @@ app.post('/', function (req, res) {
           if (data && data.val()) {
             resolve(assistant.tell(sayName(data.val().name)));
           } else {
+            // Choose one or more supported permissions to request:
+            // assistant.SupportedPermissions.NAME
+            // assistant.SupportedPermissions.PRECISE_LOCATION
+            // assistant.SupportedPermissions.COARSE_LOCATION
             let permission = assistant.SupportedPermissions.NAME;
             resolve(assistant.askForPermission('To read your mind', permission));
           }
@@ -60,31 +64,23 @@ app.post('/', function (req, res) {
   }
 
   function readMind (assistant) {
-    for (let input of req.body.originalRequest.data.inputs) {
-      if (input.arguments) {
-        for (let argument of input.arguments) {
-          if (argument.name === assistant.BuiltInArgNames.PERMISSION_GRANTED &&
-            argument.text_value === 'true') {
-            if (assistant.getUser() && assistant.getUser().profile) {
-              let userId = assistant.getUser().user_id;
-              let displayName = assistant.getUser().profile.display_name;
+    if (assistant.isPermissionGranted()) {
+      let userId = assistant.getUser().user_id;
+      let displayName = assistant.getUser().profile.display_name;
 
-              // Save to Firebase
-              firebaseAdmin.database().ref('users/' + userId).set({
-                name: displayName
-              });
+      // Save [User ID]:[Display Name] to Firebase
+      // Note: Users can reset User ID at any time.
+      firebaseAdmin.database().ref('users/' + userId).set({
+        name: displayName
+      });
 
-              assistant.tell(sayName(displayName));
-              return;
-            }
-          }
-        }
-      }
+      assistant.tell(sayName(displayName));
+    } else {
+      // Response shows that user did not grant permission
+      assistant.tell('<speak>Wow! <break time="1s"/> This has never ' +
+        'happened before. I can\'t read your mind. I need more practice. ' +
+        'Ask me again later.</speak>');
     }
-    // Response shows that user did not grant permission
-    assistant.tell('<speak>Wow! <break time="1s"/> this has never ' +
-      'happened before. I can\'t read your mind. I need more practice. ' +
-      'Ask me again later.</speak>');
   }
 
   let actionMap = new Map();
