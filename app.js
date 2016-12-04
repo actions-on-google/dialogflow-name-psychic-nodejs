@@ -66,7 +66,7 @@ app.post('/', function (req, res) {
   function readMind (assistant) {
     if (assistant.isPermissionGranted()) {
       let userId = assistant.getUser().user_id;
-      let displayName = assistant.getUser().profile.display_name;
+      let displayName = assistant.getUserName().displayName;
 
       // Save [User ID]:[Display Name] to Firebase
       // Note: Users can reset User ID at any time.
