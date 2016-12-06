@@ -82,9 +82,9 @@ app.post('/', function (req, res) {
   }
 
   function requestLocationPermission (assistant) {
-    let permission = assistant.SupportedPermissions.COARSE_LOCATION;
+    let permission = assistant.SupportedPermissions.DEVICE_COARSE_LOCATION;
     // For more precise location data, use
-    // assistant.SupportedPermissions.PRECISE_LOCATION
+    // assistant.SupportedPermissions.DEVICE_PRECISE_LOCATION
     assistant.data.permission = permission;
     return requestPermission(assistant, permission, LOCATION_DATA, sayLocation);
   }
@@ -114,7 +114,7 @@ app.post('/', function (req, res) {
         userData = assistant.getUserName().displayName;
         firebaseKey = NAME_DATA;
         speechCallback = sayName;
-      } else if (permission === assistant.SupportedPermissions.COARSE_LOCATION) {
+      } else if (permission === assistant.SupportedPermissions.DEVICE_COARSE_LOCATION) {
         userData = assistant.getDeviceLocation().city;
         firebaseKey = LOCATION_DATA;
         speechCallback = sayLocation;
