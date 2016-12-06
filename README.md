@@ -23,11 +23,14 @@ See the developer guide and release notes at https://developers.google.com/actio
 1. Choose the NamePsychic.zip, included in this repository
 1. Follow the directions to import
 1. See the new intents in your project
-1. In the ```read_mind``` and ```permission_requested``` intents, mark End Conversation for Actions on Google
+1. In the ```read_mind``` intent, mark End Conversation for Actions on Google
 1. Make sure all domains are turned off
 1. Deploy the app to your preferred hosting environment (we recommend Google App Engine)
 1. In the Fulfillment page, enable Fulfillment and specify the deployment URL
-1. For all intents, make sure Fulfillment is enabled
+1. For all intents except your Default Fallback, make sure Fulfillment is enabled
+1. When integrating with Actions on Google set the following as Additional trigger intents
+    * request_location_permission
+    * request_name_permission
 
 ## Documentation
 * Actions on Google: https://developers.google.com/actions/
