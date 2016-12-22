@@ -49,30 +49,30 @@ app.post('/', function (req, res) {
   const assistant = new ApiAiAssistant({request: req, response: res});
 
   function sayName (displayName) {
-    return `<speak>I am reading your mind now.
-      <break time="2s"/> This is easy, you are ${displayName}
-      <break time="500ms"/> I hope I pronounced that right.
+    return `<speak>I am reading your mind now. \
+      <break time="2s"/> This is easy, you are ${displayName} \
+      <break time="500ms"/> I hope I pronounced that right. \
       <break time="500ms"/> Okay! I am off to read more minds.</speak>`;
   }
 
   function sayLocation (city) {
-    return `<speak>I am reading your mind now.
-      <break time="2s"/> This is easy, you are in ${city}
-      <break time="500ms"/> That is a beautiful town.
+    return `<speak>I am reading your mind now. \
+      <break time="2s"/> This is easy, you are in ${city} \
+      <break time="500ms"/> That is a beautiful town. \
       <break time="500ms"/> Okay! I am off to read more minds.</speak>`;
   }
 
   function greetUser (assistant) {
-    assistant.ask(`<speak>Welcome to your Psychic! <break time="500ms"/>
-      My mind is more powerful than you know. I wonder which of your secrets
-      I shall unlock. Would you prefer I guess your name, or your
+    assistant.ask(`<speak>Welcome to your Psychic! <break time="500ms"/> \
+      My mind is more powerful than you know. I wonder which of your secrets \
+      I shall unlock. Would you prefer I guess your name, or your \
       location?</speak>`);
   }
 
   function unhandledDeepLinks (assistant) {
-    assistant.ask(`Welcome to your Psychic! I can guess many things about
-      you, but I cannot make guesses about
-      ${assistant.getArgument(RAW_TEXT_ARGUMENT)}.
+    assistant.ask(`Welcome to your Psychic! I can guess many things about \
+      you, but I cannot make guesses about \
+      ${assistant.getArgument(RAW_TEXT_ARGUMENT)}. \
       Instead, I shall guess your name or location. Which do you prefer?`);
   }
 
@@ -132,8 +132,8 @@ app.post('/', function (req, res) {
       assistant.tell(speechCallback(userData));
     } else {
       // Response shows that user did not grant permission
-      assistant.tell(`<speak>Wow! <break time="1s"/> This has never
-        happened before. I can't read your mind. I need more practice.
+      assistant.tell(`<speak>Wow! <break time="1s"/> This has never \
+        happened before. I can't read your mind. I need more practice. \
         Ask me again later.</speak>`);
     }
   }

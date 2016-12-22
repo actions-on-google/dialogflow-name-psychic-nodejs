@@ -13,6 +13,10 @@ information on the Actions on Google platform.
 See the developer guide and release notes at [https://developers.google.com/actions/](https://developers.google.com/actions/) for more details.
 
 ### Steps
+ 1. Create a Firebase project
+ 1. In your Project settings, under Service Accounts, download a private key
+ 1. In the Firebase Admin initialization in app.js, specify the path to your private key file
+ 1. Also specify your database name, shown in the Database page of the Firebase console
  1. Create a new agent in API.AI [https://api.ai](https://api.ai).
  1. Click on the project gear icon to see the project settings.
  1. Select "Export and Import".
