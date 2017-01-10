@@ -29,9 +29,6 @@ const REQUEST_LOC_PERMISSION_ACTION = 'request_location_permission';
 const READ_MIND_ACTION = 'read_mind';
 const UNHANDLED_DEEP_LINK_ACTION = 'deeplink.unknown';
 
-// API.AI arguments
-const RAW_TEXT_ARGUMENT = 'raw_text';
-
 // Entities/Firebase data keys
 const LOCATION_DATA = 'location';
 const NAME_DATA = 'name';
@@ -72,7 +69,7 @@ app.post('/', function (req, res) {
   function unhandledDeepLinks (assistant) {
     assistant.ask(`Welcome to your Psychic! I can guess many things about \
       you, but I cannot make guesses about \
-      ${assistant.getArgument(RAW_TEXT_ARGUMENT)}. \
+      ${assistant.getRawInput()}. \
       Instead, I shall guess your name or location. Which do you prefer?`);
   }
 
