@@ -13,16 +13,17 @@ information on the Actions on Google platform.
 See the developer guide and release notes at [https://developers.google.com/actions/](https://developers.google.com/actions/) for more details.
 
 ### Steps
- 1. Create a Firebase project
- 1. In your Project settings, under Service Accounts, download a private key
- 1. In the Firebase Admin initialization in app.js, specify the path to your private key file
- 1. Also specify your database name, shown in the Database page of the Firebase console
+ 1. Create a Firebase project.
+ 1. In your Project settings, under Service Accounts, download a private key.
+ 1. In the security key JSON import in index.js, specify the path to your private key file.
+ 1. Also specify your database name, shown in the Database page of the Firebase console.
  1. Create a new agent in API.AI [https://api.ai](https://api.ai).
  1. Click on the project gear icon to see the project settings.
  1. Select "Export and Import".
  1. Select "Restore from zip". Follow the directions to restore.
  1. Select the NamePsychic.zip file in this repo.
- 1. Deploy this app to your preferred hosting environment (we recommend Google App Engine).
+ 1. Deploy this app to your preferred hosting environment
+ (we recommend [Google Cloud Functions](https://cloud.google.com/functions/docs/tutorials/http)).
  1. Set the "Fulfillment" webhook URL to the hosting URL.
  1. Make sure all domains are turned off.
  1. Enable Actions on Google in the Integrations.

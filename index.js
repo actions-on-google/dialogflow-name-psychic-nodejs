@@ -14,13 +14,11 @@
 'use strict';
 
 process.env.DEBUG = 'actions-on-google:*';
-let ApiAiAssistant = require('actions-on-google').ApiAiAssistant;
-let firebaseAdmin = require('firebase-admin');
-let express = require('express');
-let bodyParser = require('body-parser');
+const ApiAiAssistant = require('actions-on-google').ApiAiAssistant;
+const firebaseAdmin = require('firebase-admin');
 
-let app = express();
-app.use(bodyParser.json({type: 'application/json'}));
+// Import local JSON file as Cloud Function dependency
+const cert = require('path/to/serviceAccountKey.json');
 
 // API.AI actions
 const WELCOME_ACTION = 'input.welcome';
@@ -34,12 +32,12 @@ const LOCATION_DATA = 'location';
 const NAME_DATA = 'name';
 
 firebaseAdmin.initializeApp({
-  credential: firebaseAdmin.credential.cert('path/to/serviceAccountKey.json'),
+  credential: firebaseAdmin.credential.cert(cert),
   databaseURL: 'https://<DATABASE_NAME>.firebaseio.com'
 });
 
 // [START permissions]
-app.post('/', function (req, res) {
+exports.namePsychic = (req, res) => {
   console.log('Request headers: ' + JSON.stringify(req.headers));
   console.log('Request body: ' + JSON.stringify(req.body));
 
@@ -143,17 +141,5 @@ app.post('/', function (req, res) {
   actionMap.set(READ_MIND_ACTION, readMind);
 
   assistant.handleRequest(actionMap);
-});
+};
 // [END permissions]
-
-if (module === require.main) {
-  // [START server]
-  // Start the server
-  let server = app.listen(process.env.PORT || 8080, function () {
-    let port = server.address().port;
-    console.log('App listening on port %s', port);
-  });
-  // [END server]
-}
-
-module.exports = app;
