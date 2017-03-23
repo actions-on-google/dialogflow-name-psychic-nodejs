@@ -36,6 +36,16 @@ firebaseAdmin.initializeApp({
   databaseURL: 'https://<DATABASE_NAME>.firebaseio.com'
 });
 
+function encodeAsFirebaseKey(string) {
+  return string.replace(/\%/g, '%25')
+    .replace(/\./g, '%2E')
+    .replace(/\#/g, '%23')
+    .replace(/\$/g, '%24')
+    .replace(/\//g, '%2F')
+    .replace(/\[/g, '%5B')
+    .replace(/\]/g, '%5D');
+};
+
 // [START permissions]
 exports.namePsychic = (req, res) => {
   console.log('Request headers: ' + JSON.stringify(req.headers));
@@ -88,7 +98,7 @@ exports.namePsychic = (req, res) => {
   function requestPermission (assistant, permission, firebaseKey, speechCallback) {
     return new Promise(function (resolve, reject) {
       let userId = assistant.getUser().user_id;
-      firebaseAdmin.database().ref('users/' + userId)
+      firebaseAdmin.database().ref('users/' + encodeAsFirebaseKey(userId))
         .once('value', function (data) {
           if (data && data.val() && data.val()[firebaseKey]) {
             let speechOutput = speechCallback(data.val()[firebaseKey]);
@@ -120,7 +130,7 @@ exports.namePsychic = (req, res) => {
 
       // Save [User ID]:[{<name or location>: <data>}] to Firebase
       // Note: Users can reset User ID at any time.
-      firebaseAdmin.database().ref('users/' + userId).update({
+      firebaseAdmin.database().ref('users/' + encodeAsFirebaseKey(userId)).update({
         [firebaseKey]: userData
       });
 
