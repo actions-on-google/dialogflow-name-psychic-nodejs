@@ -14,7 +14,7 @@
 'use strict';
 
 process.env.DEBUG = 'actions-on-google:*';
-const ApiAiAssistant = require('actions-on-google').ApiAiAssistant;
+const ApiAiApp = require('actions-on-google').ApiAiApp;
 const firebaseAdmin = require('firebase-admin');
 
 // Import local JSON file as Cloud Function dependency
@@ -47,11 +47,11 @@ function encodeAsFirebaseKey(string) {
 };
 
 // [START permissions]
-exports.namePsychic = (req, res) => {
-  console.log('Request headers: ' + JSON.stringify(req.headers));
-  console.log('Request body: ' + JSON.stringify(req.body));
+exports.namePsychic = (request, response) => {
+  console.log('Request headers: ' + JSON.stringify(request.headers));
+  console.log('Request body: ' + JSON.stringify(request.body));
 
-  const assistant = new ApiAiAssistant({request: req, response: res});
+  const app = new ApiAiApp({request, response});
 
   function sayName (displayName) {
     return `<speak>I am reading your mind now. \
@@ -67,66 +67,66 @@ exports.namePsychic = (req, res) => {
       <break time="500ms"/> Okay! I am off to read more minds.</speak>`;
   }
 
-  function greetUser (assistant) {
-    assistant.ask(`<speak>Welcome to your Psychic! <break time="500ms"/> \
+  function greetUser (app) {
+    app.ask(`<speak>Welcome to your Psychic! <break time="500ms"/> \
       My mind is more powerful than you know. I wonder which of your secrets \
       I shall unlock. Would you prefer I guess your name, or your \
       location?</speak>`);
   }
 
-  function unhandledDeepLinks (assistant) {
-    assistant.ask(`Welcome to your Psychic! I can guess many things about \
+  function unhandledDeepLinks (app) {
+    app.ask(`Welcome to your Psychic! I can guess many things about \
       you, but I cannot make guesses about \
-      ${assistant.getRawInput()}. \
+      ${app.getRawInput()}. \
       Instead, I shall guess your name or location. Which do you prefer?`);
   }
 
-  function requestNamePermission (assistant) {
-    let permission = assistant.SupportedPermissions.NAME;
-    assistant.data.permission = permission;
-    return requestPermission(assistant, permission, NAME_DATA, sayName);
+  function requestNamePermission (app) {
+    let permission = app.SupportedPermissions.NAME;
+    app.data.permission = permission;
+    return requestPermission(app, permission, NAME_DATA, sayName);
   }
 
-  function requestLocationPermission (assistant) {
-    let permission = assistant.SupportedPermissions.DEVICE_COARSE_LOCATION;
+  function requestLocationPermission (app) {
+    let permission = app.SupportedPermissions.DEVICE_COARSE_LOCATION;
     // For more precise location data, use
-    // assistant.SupportedPermissions.DEVICE_PRECISE_LOCATION
-    assistant.data.permission = permission;
-    return requestPermission(assistant, permission, LOCATION_DATA, sayLocation);
+    // app.SupportedPermissions.DEVICE_PRECISE_LOCATION
+    app.data.permission = permission;
+    return requestPermission(app, permission, LOCATION_DATA, sayLocation);
   }
 
-  function requestPermission (assistant, permission, firebaseKey, speechCallback) {
+  function requestPermission (app, permission, firebaseKey, speechCallback) {
     return new Promise(function (resolve, reject) {
-      let userId = assistant.getUser().user_id;
+      let userId = app.getUser().user_id;
       firebaseAdmin.database().ref('users/' + encodeAsFirebaseKey(userId))
         .once('value', function (data) {
           if (data && data.val() && data.val()[firebaseKey]) {
             let speechOutput = speechCallback(data.val()[firebaseKey]);
-            resolve(assistant.tell(speechOutput));
+            resolve(app.tell(speechOutput));
           } else {
-            resolve(assistant.askForPermission('To read your mind', permission));
+            resolve(app.askForPermission('To read your mind', permission));
           }
         });
     });
   }
 
-  function readMind (assistant) {
-    if (assistant.isPermissionGranted()) {
-      let permission = assistant.data.permission;
+  function readMind (app) {
+    if (app.isPermissionGranted()) {
+      let permission = app.data.permission;
       let userData;
       let firebaseKey;
       let speechCallback;
-      if (permission === assistant.SupportedPermissions.NAME) {
-        userData = assistant.getUserName().displayName;
+      if (permission === app.SupportedPermissions.NAME) {
+        userData = app.getUserName().displayName;
         firebaseKey = NAME_DATA;
         speechCallback = sayName;
-      } else if (permission === assistant.SupportedPermissions.DEVICE_COARSE_LOCATION) {
-        userData = assistant.getDeviceLocation().city;
+      } else if (permission === app.SupportedPermissions.DEVICE_COARSE_LOCATION) {
+        userData = app.getDeviceLocation().city;
         firebaseKey = LOCATION_DATA;
         speechCallback = sayLocation;
       }
 
-      let userId = assistant.getUser().user_id;
+      let userId = app.getUser().user_id;
 
       // Save [User ID]:[{<name or location>: <data>}] to Firebase
       // Note: Users can reset User ID at any time.
@@ -134,10 +134,10 @@ exports.namePsychic = (req, res) => {
         [firebaseKey]: userData
       });
 
-      assistant.tell(speechCallback(userData));
+      app.tell(speechCallback(userData));
     } else {
       // Response shows that user did not grant permission
-      assistant.tell(`<speak>Wow! <break time="1s"/> This has never \
+      app.tell(`<speak>Wow! <break time="1s"/> This has never \
         happened before. I can't read your mind. I need more practice. \
         Ask me again later.</speak>`);
     }
@@ -150,6 +150,6 @@ exports.namePsychic = (req, res) => {
   actionMap.set(REQUEST_LOC_PERMISSION_ACTION, requestLocationPermission);
   actionMap.set(READ_MIND_ACTION, readMind);
 
-  assistant.handleRequest(actionMap);
+  app.handleRequest(actionMap);
 };
 // [END permissions]
