@@ -15,10 +15,12 @@
 
 process.env.DEBUG = 'actions-on-google:*';
 const ApiAiApp = require('actions-on-google').ApiAiApp;
+const functions = require('firebase-functions');
 const firebaseAdmin = require('firebase-admin');
-
-// Import local JSON file as Cloud Function dependency
-const cert = require('path/to/serviceAccountKey.json');
+firebaseAdmin.initializeApp(functions.config().firebase);
+const googleMapsClient = require('@google/maps').createClient({
+  key: functions.config().geocoding.key
+});
 
 // API.AI actions
 const WELCOME_ACTION = 'input.welcome';
@@ -31,27 +33,25 @@ const UNHANDLED_DEEP_LINK_ACTION = 'deeplink.unknown';
 const LOCATION_DATA = 'location';
 const NAME_DATA = 'name';
 
-firebaseAdmin.initializeApp({
-  credential: firebaseAdmin.credential.cert(cert),
-  databaseURL: 'https://<DATABASE_NAME>.firebaseio.com'
-});
-
-function encodeAsFirebaseKey(string) {
-  return string.replace(/\%/g, '%25')
+function encodeAsFirebaseKey (string) {
+  return string.replace(/%/g, '%25')
     .replace(/\./g, '%2E')
-    .replace(/\#/g, '%23')
+    .replace(/#/g, '%23')
     .replace(/\$/g, '%24')
     .replace(/\//g, '%2F')
     .replace(/\[/g, '%5B')
     .replace(/\]/g, '%5D');
-};
+}
 
 // [START permissions]
-exports.namePsychic = (request, response) => {
+exports.namePsychic = functions.https.onRequest((request, response) => {
   console.log('Request headers: ' + JSON.stringify(request.headers));
   console.log('Request body: ' + JSON.stringify(request.body));
 
   const app = new ApiAiApp({request, response});
+
+  let hasScreen =
+    app.hasSurfaceCapability(app.SurfaceCapabilities.SCREEN_OUTPUT);
 
   function sayName (displayName) {
     return `<speak>I am reading your mind now. \
@@ -88,9 +88,13 @@ exports.namePsychic = (request, response) => {
   }
 
   function requestLocationPermission (app) {
-    let permission = app.SupportedPermissions.DEVICE_COARSE_LOCATION;
-    // For more precise location data, use
-    // app.SupportedPermissions.DEVICE_PRECISE_LOCATION
+    let permission;
+    // If the request comes from a phone, we can't use coarse location.
+    if (hasScreen) {
+      permission = app.SupportedPermissions.DEVICE_PRECISE_LOCATION;
+    } else {
+      permission = app.SupportedPermissions.DEVICE_COARSE_LOCATION;
+    }
     app.data.permission = permission;
     return requestPermission(app, permission, LOCATION_DATA, sayLocation);
   }
@@ -110,6 +114,18 @@ exports.namePsychic = (request, response) => {
     });
   }
 
+  // Parse city name from the results returned by Google Maps reverse geocoding.
+  function parseCityFromReverseGeocoding (results) {
+    let addressComponents = results[0].address_components;
+    for (let component of addressComponents) {
+      for (let type of component.types) {
+        if (type === 'locality') {
+          return component.long_name;
+        }
+      }
+    }
+  }
+
   function readMind (app) {
     if (app.isPermissionGranted()) {
       let permission = app.data.permission;
@@ -120,27 +136,53 @@ exports.namePsychic = (request, response) => {
         userData = app.getUserName().displayName;
         firebaseKey = NAME_DATA;
         speechCallback = sayName;
+        readMindResponse(app, userData, firebaseKey, speechCallback);
       } else if (permission === app.SupportedPermissions.DEVICE_COARSE_LOCATION) {
         userData = app.getDeviceLocation().city;
         firebaseKey = LOCATION_DATA;
         speechCallback = sayLocation;
+        readMindResponse(app, userData, firebaseKey, speechCallback);
+      } else if (permission === app.SupportedPermissions.DEVICE_PRECISE_LOCATION) {
+        // If we required precise location, it means that we're on a phone.
+        // Because we will get only latitude and longitude, we need to reverse geocode
+        // to get the city.
+        let deviceCoordinates = app.getDeviceLocation().coordinates;
+        let latLng = [deviceCoordinates.latitude, deviceCoordinates.longitude];
+        googleMapsClient.reverseGeocode({latlng: latLng}, function (err, response) {
+          if (!err) {
+            userData = parseCityFromReverseGeocoding(response.json.results);
+            firebaseKey = LOCATION_DATA;
+            speechCallback = sayLocation;
+            readMindResponse(app, userData, firebaseKey, speechCallback);
+          } else {
+            readMindError();
+          }
+        });
+      } else {
+        readMindError();
       }
+    } else {
+      readMindError();
+    }
+  }
 
-      let userId = app.getUser().user_id;
+  function readMindResponse (app, userData, firebaseKey, speechCallback) {
+    let userId = app.getUser().user_id;
 
       // Save [User ID]:[{<name or location>: <data>}] to Firebase
       // Note: Users can reset User ID at any time.
-      firebaseAdmin.database().ref('users/' + encodeAsFirebaseKey(userId)).update({
-        [firebaseKey]: userData
-      });
+    firebaseAdmin.database().ref('users/' + encodeAsFirebaseKey(userId)).update({
+      [firebaseKey]: userData
+    });
 
-      app.tell(speechCallback(userData));
-    } else {
-      // Response shows that user did not grant permission
-      app.tell(`<speak>Wow! <break time="1s"/> This has never \
-        happened before. I can't read your mind. I need more practice. \
+    app.tell(speechCallback(userData));
+  }
+
+  function readMindError () {
+      // User did not grant permission or reverse geocoding failed.
+    app.tell(`<speak>Wow! <break time="1s"/> This has never \
+        happened before. I cannot read your mind. I need more practice. \
         Ask me again later.</speak>`);
-    }
   }
 
   let actionMap = new Map();
@@ -151,5 +193,5 @@ exports.namePsychic = (request, response) => {
   actionMap.set(READ_MIND_ACTION, readMind);
 
   app.handleRequest(actionMap);
-};
+});
 // [END permissions]
