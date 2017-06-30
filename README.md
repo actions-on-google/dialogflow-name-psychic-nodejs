@@ -14,8 +14,7 @@ information on the Actions on Google platform.
 1. Select *Export and Import*.
 1. Select *Restore from zip*. Follow the directions to restore from the `NamePsychic.zip` file in this repo.
 1. Deploy the fulfillment webhook provided in the `functions` folder using [Google Cloud Functions for Firebase](https://firebase.google.com/docs/functions/):
-   1. Create a Firebase project in the [Firebase Console](https://console.firebase.google.com) if you don't have one already.
-   1. Follow the instructions to [set up and initialize Firebase SDK for Cloud Functions](https://firebase.google.com/docs/functions/get-started#set_up_and_initialize_functions_sdk). Make sure to reply "N" when asked to overwrite existing files by the Firebase CLI.
+   1. Follow the instructions to [set up and initialize Firebase SDK for Cloud Functions](https://firebase.google.com/docs/functions/get-started#set_up_and_initialize_functions_sdk). Make sure to select the project that you have previously generated in the Actions on Google Console and to reply "N" when asked to overwrite existing files by the Firebase CLI.
    1. Obtain an API Key for the Google Maps Geocoding API following Step 1 of the instructions from [this page](https://developers.google.com/maps/documentation/geocoding/get-api-key).
    1. Run the following command replacing `<THE_API_KEY>` with your API Key for the Google Maps Geocoding API: `firebase functions:config:set geocoding.key="<THE API KEY>"`
    1. Run `firebase deploy --only functions` and take note of the endpoint where the fulfillment webhook has been published. It should look like `Function URL (namePsychic): https://us-central1-YOUR_PROJECT.cloudfunctions.net/namePsychic`
