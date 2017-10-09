@@ -8,7 +8,7 @@ information on the Actions on Google platform.
 
 ### Steps
 1. Use the [Actions on Google Console](https://console.actions.google.com) to add a new project with a name of your choosing.
-1. Click *Use API.AI* and then *Create Actions on API.AI*.
+1. Under *Build a custom app*, click *BUILD* in the Dialogflow box and then click *Create Actions on Dialogflow*.
 1. Click *Save* to save the project.
 1. Click on the gear icon to see the project settings.
 1. Select *Export and Import*.
@@ -18,7 +18,7 @@ information on the Actions on Google platform.
    1. Obtain an API Key for the Google Maps Geocoding API following Step 1 of the instructions from [this page](https://developers.google.com/maps/documentation/geocoding/get-api-key).
    1. Run the following command replacing `<THE_API_KEY>` with your API Key for the Google Maps Geocoding API: `firebase functions:config:set geocoding.key="<THE API KEY>"`
    1. Run `firebase deploy --only functions` and take note of the endpoint where the fulfillment webhook has been published. It should look like `Function URL (namePsychic): https://us-central1-YOUR_PROJECT.cloudfunctions.net/namePsychic`
-1. Go back to the API.AI console and select *Fulfillment* from the left navigation menu. Enable *Webhook*, set the value of *URL* to the `Function URL` from the previous step, then click *Save*.
+1. Go back to the Dialogflow console and select *Fulfillment* from the left navigation menu. Enable *Webhook*, set the value of *URL* to the `Function URL` from the previous step, then click *Save*.
 1. Select *Intents* from the left navigation menu. Select the `handle_permission` fallback intent, scroll down to the *Actions on Google* section, check *End Conversation*, then click *Save*.
 1. Select *Integrations* from the left navigation menu and open the *Settings* menu for Actions on Google.
 1. Enter the following intents as *Additional triggering intents*
@@ -28,7 +28,7 @@ information on the Actions on Google platform.
 1. Click *View* to open the Actions on Google simulator.
 1. Type `Talk to my test app` in the simulator, or say `OK Google, talk to my test app` to any Actions on Google enabled device signed into your developer account.
 
-For more detailed information on deployment, see the [documentation](https://developers.google.com/actions/apiai/deploy-fulfillment).
+For more detailed information on deployment, see the [documentation](https://developers.google.com/actions/dialogflow/deploy-fulfillment).
 
 ## References and How to report bugs
 * Actions on Google documentation: [https://developers.google.com/actions/](https://developers.google.com/actions/).

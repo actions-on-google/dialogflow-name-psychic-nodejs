@@ -14,7 +14,7 @@
 'use strict';
 
 process.env.DEBUG = 'actions-on-google:*';
-const ApiAiApp = require('actions-on-google').ApiAiApp;
+const { DialogflowApp } = require('actions-on-google');
 const functions = require('firebase-functions');
 const firebaseAdmin = require('firebase-admin');
 firebaseAdmin.initializeApp(functions.config().firebase);
@@ -22,7 +22,7 @@ const googleMapsClient = require('@google/maps').createClient({
   key: functions.config().geocoding.key
 });
 
-// API.AI actions
+// Dialogflow actions
 const WELCOME_ACTION = 'input.welcome';
 const REQUEST_NAME_PERMISSION_ACTION = 'request_name_permission';
 const REQUEST_LOC_PERMISSION_ACTION = 'request_location_permission';
@@ -43,12 +43,11 @@ function encodeAsFirebaseKey (string) {
     .replace(/\]/g, '%5D');
 }
 
-// [START permissions]
 exports.namePsychic = functions.https.onRequest((request, response) => {
   console.log('Request headers: ' + JSON.stringify(request.headers));
   console.log('Request body: ' + JSON.stringify(request.body));
 
-  const app = new ApiAiApp({request, response});
+  const app = new DialogflowApp({request, response});
 
   let hasScreen =
     app.hasSurfaceCapability(app.SurfaceCapabilities.SCREEN_OUTPUT);
@@ -194,4 +193,3 @@ exports.namePsychic = functions.https.onRequest((request, response) => {
 
   app.handleRequest(actionMap);
 });
-// [END permissions]
