@@ -15,14 +15,16 @@
 
 process.env.DEBUG = 'actions-on-google:*';
 
-const { DialogflowApp } = require('actions-on-google');
+const url = require('url');
+const { DialogflowApp, Responses } = require('actions-on-google');
+const { RichResponse, BasicCard } = Responses;
 const functions = require('firebase-functions');
 const maps = require('@google/maps');
 
 const config = functions.config();
 
 const client = maps.createClient({
-  key: config.geocoding.key
+  key: config.maps.key
 });
 
 // Dialogflow actions
@@ -31,7 +33,31 @@ const Actions = {
   REQUEST_NAME_PERMISSION: 'request.name.permission',
   REQUEST_LOC_PERMISSION: 'request.location.permission',
   READ_MIND: 'read.mind',
+  NEW_SURFACE: 'new.surface',
   UNHANDLED_DEEP_LINK: 'deeplink.unknown'
+};
+
+const STATIC_MAPS_ADDRESS = 'https://maps.googleapis.com/maps/api/staticmap';
+const STATIC_MAPS_SIZE = '640x640';
+const staticMapsURL = url.parse(STATIC_MAPS_ADDRESS);
+staticMapsURL.query = {
+  key: config.maps.key,
+  size: STATIC_MAPS_SIZE
+};
+
+/**
+ * Constructs a rich response consisting of a simple response and a basic card whose image shows
+ * a Static Maps view centered on a city.
+ *
+ * @param {string} city
+ * @param {string} speech
+ */
+const locationResponse = (city, speech) => {
+  staticMapsURL.query.center = city;
+  const mapViewURL = url.format(staticMapsURL);
+  return new RichResponse()
+    .addSimpleResponse(speech)
+    .addBasicCard(new BasicCard().setImage(mapViewURL, 'City Map'));
 };
 
 /**
@@ -79,17 +105,17 @@ const responses = {
     </speak>
   `,
   /** @param {string} city */
-  sayLocation: city => ssml`
-    <speak>
-      I am reading your mind now.
-      <break time="2s"/>
-      This is easy, you are in ${city}
-      <break time="500ms"/>
-      That is a beautiful town.
-      <break time="500ms"/>
-      Okay! I am off to read more minds.
-    </speak>
-  `,
+  sayLocation: city => locationResponse(city, ssml`
+      <speak>
+        I am reading your mind now.
+        <break time="2s"/>
+        This is easy, you are in ${city}
+        <break time="500ms"/>
+        That is a beautiful town.
+        <break time="500ms"/>
+        Okay! I am off to read more minds.
+      </speak>
+    `),
   greetUser: ssml`
     <speak>
       Welcome to your Psychic!
@@ -115,7 +141,9 @@ const responses = {
       Ask me again later.
     </speak>
   `,
-  permissionReason: 'To read your mind'
+  permissionReason: 'To read your mind',
+  newSurfaceContext: 'To show you your location',
+  notificationText: 'See you where you are...'
 };
 
 /**
@@ -199,6 +227,22 @@ class NamePsychic {
     ));
   }
 
+  /**
+   * Shows the location of the user with a preference for a screen device. If on a speaker device,
+   * asks to transfer dialog to a screen device.
+   * Reads location from userStorage.
+   */
+  showLocationOnScreen () {
+    /** @type {boolean} */
+    const screenCapability = this.app.SurfaceCapabilities.SCREEN_OUTPUT;
+    if (this.app.hasSurfaceCapability(screenCapability) ||
+      !this.app.hasAvailableSurfaceCapabilities(screenCapability)) {
+      this.app.tell(responses.sayLocation(this.userStorage.location));
+    }
+    this.app.askForNewSurface(responses.newSurfaceContext, responses.notificationText,
+      [screenCapability]);
+  }
+
   [Actions.WELCOME] () {
     this.app.ask(responses.greetUser);
   }
@@ -225,7 +269,7 @@ class NamePsychic {
     if (!this.userStorage.location) {
       return this.app.askForPermission(responses.permissionReason, requestedPermission);
     }
-    this.app.tell(responses.sayLocation(this.userStorage.location));
+    this.showLocationOnScreen();
   }
 
   [Actions.READ_MIND] () {
@@ -238,21 +282,26 @@ class NamePsychic {
       return this.app.tell(responses.sayName(this.userStorage.name));
     }
     if (requestedPermission === this.permissions.DEVICE_COARSE_LOCATION) {
+      // If we requested coarse location, it means that we're on a speaker device.
       this.userStorage.location = this.app.getDeviceLocation().city;
-      return this.app.tell(responses.sayLocation(this.userStorage.location));
+      this.showLocationOnScreen();
     }
     if (requestedPermission === this.permissions.DEVICE_PRECISE_LOCATION) {
-      // If we required precise location, it means that we're on a phone.
+      // If we requested precise location, it means that we're on a phone.
       // Because we will get only latitude and longitude, we need to reverse geocode
       // to get the city.
       const { coordinates } = this.app.getDeviceLocation();
       return this.coordinatesToCity(coordinates.latitude, coordinates.longitude)
         .then(city => {
           this.userStorage.location = city;
-          this.app.tell(responses.sayLocation(this.userStorage.location));
+          this.showLocationOnScreen();
         });
     }
     return Promise.reject(new Error('Unrecognized permission'));
+  }
+
+  [Actions.NEW_SURFACE] () {
+    this.app.tell(responses.sayLocation(this.userStorage.location));
   }
 }
 
