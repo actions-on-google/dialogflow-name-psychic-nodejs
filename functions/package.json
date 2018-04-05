@@ -15,10 +15,10 @@
     "test": "npm run lint"
   },
   "dependencies": {
+    "@google/maps": "^0.4.1",
     "actions-on-google": "^1.6.0",
-    "firebase-admin": "^4.2.1",
-    "firebase-functions": "^0.5.7",
-    "@google/maps": "^0.4.1"
+    "firebase-admin": "^5.11.0",
+    "firebase-functions": "^1.0.0"
   },
   "devDependencies": {
     "eslint": "^3.19.0",
