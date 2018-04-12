@@ -13,87 +13,43 @@
 
 'use strict';
 
-process.env.DEBUG = 'actions-on-google:*';
-
-const url = require('url');
-const { DialogflowApp, Responses } = require('actions-on-google');
-const { RichResponse, BasicCard } = Responses;
 const functions = require('firebase-functions');
 const maps = require('@google/maps');
+const url = require('url');
+const {
+  dialogflow,
+  Image,
+  Permission,
+  NewSurface,
+} = require('actions-on-google');
+const {ssml} = require('./util');
 
 const config = functions.config();
 
-const client = maps.createClient({
-  key: config.maps.key
-});
-
-// Dialogflow actions
-const Actions = {
-  WELCOME: 'input.welcome',
-  REQUEST_NAME_PERMISSION: 'request.name.permission',
-  REQUEST_LOC_PERMISSION: 'request.location.permission',
-  READ_MIND: 'read.mind',
-  NEW_SURFACE: 'new.surface',
-  UNHANDLED_DEEP_LINK: 'deeplink.unknown'
-};
+const client = maps.createClient({key: config.maps.key});
 
 const STATIC_MAPS_ADDRESS = 'https://maps.googleapis.com/maps/api/staticmap';
 const STATIC_MAPS_SIZE = '640x640';
-const staticMapsURL = url.parse(STATIC_MAPS_ADDRESS);
-staticMapsURL.query = {
-  key: config.maps.key,
-  size: STATIC_MAPS_SIZE
-};
 
-/**
- * Constructs a rich response consisting of a simple response and a basic card whose image shows
- * a Static Maps view centered on a city.
- *
- * @param {string} city
- * @param {string} speech
- */
 const locationResponse = (city, speech) => {
+  const staticMapsURL = url.parse(STATIC_MAPS_ADDRESS, true);
+  staticMapsURL.query = {
+    key: config.maps.key,
+    size: STATIC_MAPS_SIZE,
+  };
   staticMapsURL.query.center = city;
   const mapViewURL = url.format(staticMapsURL);
-  return new RichResponse()
-    .addSimpleResponse(speech)
-    .addBasicCard(new BasicCard().setImage(mapViewURL, 'City Map'));
+  return [
+    speech,
+    new Image({
+      url: mapViewURL,
+      alt: 'City Map',
+    }),
+  ];
 };
 
-/**
- * Sanitize template literal inputs by escaping characters into XML entities to use in SSML
- * Also normalize the extra spacing for better text rendering in SSML
- * A tag function used by ES6 tagged template literals
- * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_template_literals
- *
- * @example
- * const equation = '"1 + 1 > 1"';
- * const response = ssml`
- *   <speak>
- *     ${equation}
- *   </speak>
- * `;
- * // Equivalent to ssml`\n  <speak>\n    ${equation}\n  </speak>\n`
- * console.log(response);
- * // Prints: '<speak>&quot;1 + 1 &gt; 1&quot;</speak>'
- *
- * @param {TemplateStringsArray} template Non sanitized constant strings in the template literal
- * @param {Array<string>} inputs Computed expressions to be sanitized surrounded by ${}
- */
-const ssml = (template, ...inputs) => template.reduce((out, str, i) => i
-  ? out + (
-    inputs[i - 1]
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-  ) + str
-  : str
-).trim().replace(/\s+/g, ' ').replace(/ </g, '<').replace(/> /g, '>');
-
 const responses = {
-  /** @param {string} name */
-  sayName: name => ssml`
+  sayName: (name) => ssml`
     <speak>
       I am reading your mind now.
       <break time="2s"/>
@@ -104,18 +60,17 @@ const responses = {
       Okay! I am off to read more minds.
     </speak>
   `,
-  /** @param {string} city */
-  sayLocation: city => locationResponse(city, ssml`
-      <speak>
-        I am reading your mind now.
-        <break time="2s"/>
-        This is easy, you are in ${city}
-        <break time="500ms"/>
-        That is a beautiful town.
-        <break time="500ms"/>
-        Okay! I am off to read more minds.
-      </speak>
-    `),
+  sayLocation: (city) => locationResponse(city, ssml`
+    <speak>
+      I am reading your mind now.
+      <break time="2s"/>
+      This is easy, you are in ${city}
+      <break time="500ms"/>
+      That is a beautiful town.
+      <break time="500ms"/>
+      Okay! I am off to read more minds.
+    </speak>
+  `),
   greetUser: ssml`
     <speak>
       Welcome to your Psychic!
@@ -125,8 +80,7 @@ const responses = {
       Would you prefer I guess your name, or your location?
     </speak>
   `,
-  /** @param {string} input */
-  unhandledDeepLinks: input => ssml`
+  unhandledDeepLinks: (input) => ssml`
     <speak>
       Welcome to your Psychic! I can guess many things about you,
       but I cannot make guesses about ${input}.
@@ -137,172 +91,138 @@ const responses = {
     <speak>
       Wow!
       <break time="1s"/>
-      This has never happened before. I cannot read your mind. I need more practice.
+      This has never happened before. I cannot read your mind.
+      I need more practice.
       Ask me again later.
     </speak>
   `,
   permissionReason: 'To read your mind',
   newSurfaceContext: 'To show you your location',
-  notificationText: 'See you where you are...'
+  notificationText: 'See you where you are...',
 };
 
 /**
- * @typedef {Object} AppData
- * @property {string=} requestedPermission
- */
-
-/**
- * @typedef {Object} UserStorage
- * @property {string=} location
- * @property {string=} name
- */
-
-class NamePsychic {
-  /**
-   * @param {ExpressRequest} req
-   * @param {ExpressResponse} res
-   */
-  constructor (req, res) {
-    console.log('Headers', JSON.stringify(req.headers, null, 2));
-    console.log('Body', JSON.stringify(req.body, null, 2));
-
-    this.app = new DialogflowApp({
-      request: req,
-      response: res
-    });
-
-    /** @type {AppData} */
-    this.data = this.app.data;
-    /** @type {UserStorage} */
-    this.userStorage = this.app.userStorage;
-    this.permissions = this.app.SupportedPermissions;
-  }
-
-  run () {
-    /** @type {*} */
-    const map = this;
-    const action = this.app.getIntent();
-    console.log(action);
-    if (!action) {
-      return this.app.tell(responses.readMindError);
-    }
-    const result = map[action]();
-    if (result instanceof Promise) {
-      result.catch(/** @param {Error} e */ e => {
-        console.log('Error', e.toString(), e.stack);
-        this.app.tell(responses.readMindError);
-      });
-    }
-  }
-
-  /**
-   * Gets the city name from results returned by Google Maps reverse geocoding from coordinates.
+   * Gets the city name from results returned by Google Maps reverse geocoding
+   * from coordinates.
    * @param {number} latitude
    * @param {number} longitude
    * @return {Promise<string>}
    */
-  coordinatesToCity (latitude, longitude) {
-    const latlng = [latitude, longitude];
-    return new Promise((resolve, reject) => client.reverseGeocode({ latlng },
-      /**
-       * @param {Error} e
-       * @param {Object<string, *>} response
-       */
-      (e, response) => {
-        if (e) {
-          return reject(e);
-        }
-        const { results } = response.json;
-        /** @type {Array<Object<string, *>>} */
-        const components = results[0].address_components;
-        for (const component of components) {
-          for (const type of component.types) {
-            if (type === 'locality') {
-              return resolve(component.long_name);
-            }
+const coordinatesToCity = (latitude, longitude) => {
+  const latlng = [latitude, longitude];
+  return new Promise((resolve, reject) => client.reverseGeocode({latlng},
+    (e, response) => {
+      if (e) {
+        return reject(e);
+      }
+      const {results} = response.json;
+      const components = results[0].address_components;
+      for (const component of components) {
+        for (const type of component.types) {
+          if (type === 'locality') {
+            return resolve(component.long_name);
           }
         }
-        reject(new Error('Could not parse city name from Google Maps results'));
       }
-    ));
-  }
+      reject(new Error('Could not parse city name from Google Maps results'));
+    })
+  );
+};
 
-  /**
-   * Shows the location of the user with a preference for a screen device. If on a speaker device,
-   * asks to transfer dialog to a screen device.
+ /**
+   * Shows the location of the user with a preference for a screen device.
+   * If on a speaker device, asks to transfer dialog to a screen device.
    * Reads location from userStorage.
+   * @param {object} conv - The conversation instance.
+   * @return {Void}
    */
-  showLocationOnScreen () {
-    /** @type {boolean} */
-    const screenCapability = this.app.SurfaceCapabilities.SCREEN_OUTPUT;
-    if (this.app.hasSurfaceCapability(screenCapability) ||
-      !this.app.hasAvailableSurfaceCapabilities(screenCapability)) {
-      this.app.tell(responses.sayLocation(this.userStorage.location));
-    }
-    this.app.askForNewSurface(responses.newSurfaceContext, responses.notificationText,
-      [screenCapability]);
+const showLocationOnScreen = (conv) => {
+  const capability = 'actions.capability.SCREEN_OUTPUT';
+  if (conv.surface.capabilities.has(capability) ||
+    !conv.available.surfaces.capabilities.has(capability)) {
+    return conv.close(...responses.sayLocation(conv.user.storage.location));
   }
+  conv.ask(new NewSurface({
+    context: responses.newSurfaceContext,
+    notification: responses.notificationText,
+    capabilities: capability,
+  }));
+};
 
-  [Actions.WELCOME] () {
-    this.app.ask(responses.greetUser);
+const app = dialogflow({debug: true});
+
+app.intent('Default Welcome Intent', (conv) => {
+  // conv.user.storage = {}
+  // Uncomment above to delete the cached permissions on each request
+  // to force the app to request new permissions from the user
+  conv.ask(responses.greetUser);
+});
+
+app.intent('Unrecognized Deep Link Fallback', (conv) => {
+  conv.ask(responses.unhandledDeepLinks(conv.query));
+});
+
+app.intent('request_name_permission', (conv) => {
+  conv.data.requestedPermission = 'NAME';
+  if (!conv.user.storage.name) {
+    return conv.ask(new Permission({
+      context: responses.permissionReason,
+      permissions: conv.data.requestedPermission,
+    }));
   }
+  conv.close(responses.sayName(conv.user.storage.name));
+});
 
-  [Actions.UNHANDLED_DEEP_LINK] () {
-    this.app.ask(responses.unhandledDeepLinks(this.app.getRawInput()));
+app.intent('request_location_permission', (conv) => {
+  // If the request comes from a phone, we can't use coarse location.
+  conv.data.requestedPermission =
+    conv.surface.capabilities.has('actions.capability.SCREEN_OUTPUT')
+    ? 'DEVICE_PRECISE_LOCATION'
+    : 'DEVICE_COARSE_LOCATION';
+  if (!conv.user.storage.location) {
+    return conv.ask(new Permission({
+      context: responses.permissionReason,
+      permissions: conv.data.requestedPermission,
+    }));
   }
+  showLocationOnScreen(conv);
+});
 
-  [Actions.REQUEST_NAME_PERMISSION] () {
-    const requestedPermission = this.permissions.NAME;
-    this.data.requestedPermission = requestedPermission;
-    if (!this.userStorage.name) {
-      return this.app.askForPermission(responses.permissionReason, requestedPermission);
-    }
-    this.app.tell(responses.sayName(this.userStorage.name));
+app.intent('handle_permission', (conv, params, permissionGranted) => {
+  if (!permissionGranted) {
+    throw new Error('Permission not granted');
   }
-
-  [Actions.REQUEST_LOC_PERMISSION] () {
-    // If the request comes from a phone, we can't use coarse location.
-    const requestedPermission = this.app.hasSurfaceCapability(this.app.SurfaceCapabilities.SCREEN_OUTPUT)
-      ? this.permissions.DEVICE_PRECISE_LOCATION
-      : this.permissions.DEVICE_COARSE_LOCATION;
-    this.data.requestedPermission = requestedPermission;
-    if (!this.userStorage.location) {
-      return this.app.askForPermission(responses.permissionReason, requestedPermission);
-    }
-    this.showLocationOnScreen();
+  const {requestedPermission} = conv.data;
+  if (requestedPermission === 'NAME') {
+    conv.user.storage.name = conv.user.name.display;
+    return conv.close(responses.sayName(conv.user.storage.name));
   }
-
-  [Actions.READ_MIND] () {
-    if (!this.app.isPermissionGranted()) {
-      return Promise.reject(new Error('Permission not granted'));
-    }
-    const requestedPermission = this.data.requestedPermission;
-    if (requestedPermission === this.permissions.NAME) {
-      this.userStorage.name = this.app.getUserName().displayName;
-      return this.app.tell(responses.sayName(this.userStorage.name));
-    }
-    if (requestedPermission === this.permissions.DEVICE_COARSE_LOCATION) {
-      // If we requested coarse location, it means that we're on a speaker device.
-      this.userStorage.location = this.app.getDeviceLocation().city;
-      this.showLocationOnScreen();
-    }
-    if (requestedPermission === this.permissions.DEVICE_PRECISE_LOCATION) {
-      // If we requested precise location, it means that we're on a phone.
-      // Because we will get only latitude and longitude, we need to reverse geocode
-      // to get the city.
-      const { coordinates } = this.app.getDeviceLocation();
-      return this.coordinatesToCity(coordinates.latitude, coordinates.longitude)
-        .then(city => {
-          this.userStorage.location = city;
-          this.showLocationOnScreen();
-        });
-    }
-    return Promise.reject(new Error('Unrecognized permission'));
+  if (requestedPermission === 'DEVICE_COARSE_LOCATION') {
+    // If we requested coarse location, it means that we're on a speaker device.
+    conv.user.storage.location = conv.device.location.city;
+    return showLocationOnScreen(conv);
   }
-
-  [Actions.NEW_SURFACE] () {
-    this.app.tell(responses.sayLocation(this.userStorage.location));
+  if (requestedPermission === 'DEVICE_PRECISE_LOCATION') {
+    // If we requested precise location, it means that we're on a phone.
+    // Because we will get only latitude and longitude, we need to
+    // reverse geocode to get the city.
+    const {coordinates} = conv.device.location;
+    return coordinatesToCity(coordinates.latitude, coordinates.longitude)
+      .then((city) => {
+        conv.user.storage.location = city;
+        showLocationOnScreen(conv);
+      });
   }
-}
+  throw new Error('Unrecognized permission');
+});
 
-exports.namePsychic = functions.https.onRequest((req, res) => new NamePsychic(req, res).run());
+app.intent('new_surface', (conv) => {
+  conv.close(...responses.sayLocation(conv.user.storage.location));
+});
+
+app.catch((conv, e) => {
+  console.error(e);
+  conv.close(responses.readMindError);
+});
+
+exports.namePsychic = functions.https.onRequest(app);
