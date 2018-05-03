@@ -7,9 +7,10 @@ information on the Actions on Google platform.
 ## Setup Instructions
 
 ### Steps
-1. Use the [Actions on Google Console](https://console.actions.google.com) to add a new project with a name of your choosing.
-1. Under *Build a custom app*, click *BUILD* in the Dialogflow box and then click *Create Actions on Dialogflow*.
-1. Click *Save* to save the project.
+1. Use the [Actions on Google Console](https://console.actions.google.com) to add a new project with a name of your choosing and click *Create Project*.
+1. Click *Skip*, located on the top right to skip over category selection menu.
+1. On the left navigation menu under *BUILD*, click on *Actions*. Click on *Add Your First Action* and choose your app's language(s).
+1. Select *Custom intent*, click *BUILD*. This will open a Dialogflow console. Click *CREATE*.
 1. Click on the gear icon to see the project settings.
 1. Select *Export and Import*.
 1. Select *Restore from zip*. Follow the directions to restore from the `NamePsychic.zip` file in this repo.
@@ -25,8 +26,7 @@ information on the Actions on Google platform.
 1. Enter the following intents as *Additional triggering intents*
     * `request_name_permission`
     * `request_location_permission`
-1. Click *Test*.
-1. Click *View* to open the Actions on Google simulator.
+1. Enable *Auto-preview changes* and Click *Test*. This will open the Actions on Google simulator.
 1. Type `Talk to my test app` in the simulator, or say `OK Google, talk to my test app` to any Actions on Google enabled device signed into your developer account.
 
 For more detailed information on deployment, see the [documentation](https://developers.google.com/actions/dialogflow/deploy-fulfillment).
