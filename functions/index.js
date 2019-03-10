@@ -14,7 +14,6 @@
 'use strict';
 
 const functions = require('firebase-functions');
-const maps = require('@google/maps');
 const url = require('url');
 const {
   dialogflow,
@@ -25,9 +24,6 @@ const {
 const {ssml} = require('./util');
 
 const config = functions.config();
-
-const client = maps.createClient({key: config.maps.key});
-
 const STATIC_MAPS_ADDRESS = 'https://maps.googleapis.com/maps/api/staticmap';
 const STATIC_MAPS_SIZE = '640x640';
 
@@ -101,34 +97,6 @@ const responses = {
   notificationText: 'See you where you are...',
 };
 
-/**
-   * Gets the city name from results returned by Google Maps reverse geocoding
-   * from coordinates.
-   * @param {number} latitude
-   * @param {number} longitude
-   * @return {Promise<string>}
-   */
-const coordinatesToCity = (latitude, longitude) => {
-  const latlng = [latitude, longitude];
-  return new Promise((resolve, reject) => client.reverseGeocode({latlng},
-    (e, response) => {
-      if (e) {
-        return reject(e);
-      }
-      const {results} = response.json;
-      const components = results[0].address_components;
-      for (const component of components) {
-        for (const type of component.types) {
-          if (type === 'locality') {
-            return resolve(component.long_name);
-          }
-        }
-      }
-      reject(new Error('Could not parse city name from Google Maps results'));
-    })
-  );
-};
-
  /**
    * Shows the location of the user with a preference for a screen device.
    * If on a speaker device, asks to transfer dialog to a screen device.
@@ -174,11 +142,10 @@ app.intent('request_name_permission', (conv) => {
 });
 
 app.intent('request_location_permission', (conv) => {
-  // If the request comes from a phone, we can't use coarse location.
-  conv.data.requestedPermission =
-    conv.surface.capabilities.has('actions.capability.SCREEN_OUTPUT')
-    ? 'DEVICE_PRECISE_LOCATION'
-    : 'DEVICE_COARSE_LOCATION';
+  // 'DEVICE_COARSE_LOCATION' will provide a street address.
+  // ['DEVICE_PRECISE_LOCATION'](https://developers.google.com/actions/assistant/helpers#user_information) can be used for geolocation.
+  conv.data.requestedPermission = 'DEVICE_COARSE_LOCATION';
+
   if (!conv.user.storage.location) {
     return conv.ask(new Permission({
       context: responses.permissionReason,
@@ -198,20 +165,8 @@ app.intent('handle_permission', (conv, params, permissionGranted) => {
     return conv.close(responses.sayName(conv.user.storage.name));
   }
   if (requestedPermission === 'DEVICE_COARSE_LOCATION') {
-    // If we requested coarse location, it means that we're on a speaker device.
     conv.user.storage.location = conv.device.location.city;
     return showLocationOnScreen(conv);
-  }
-  if (requestedPermission === 'DEVICE_PRECISE_LOCATION') {
-    // If we requested precise location, it means that we're on a phone.
-    // Because we will get only latitude and longitude, we need to
-    // reverse geocode to get the city.
-    const {coordinates} = conv.device.location;
-    return coordinatesToCity(coordinates.latitude, coordinates.longitude)
-      .then((city) => {
-        conv.user.storage.location = city;
-        showLocationOnScreen(conv);
-      });
   }
   throw new Error('Unrecognized permission');
 });
@@ -225,4 +180,4 @@ app.catch((conv, e) => {
   conv.close(responses.readMindError);
 });
 
-exports.namePsychic = functions.https.onRequest(app);
+exports.webhook = functions.https.onRequest(app);
