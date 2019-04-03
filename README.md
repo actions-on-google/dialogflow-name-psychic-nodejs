@@ -28,20 +28,18 @@ when building Actions for Google Assistant and uses Google Maps Static API.
 1. Enable *Auto-preview changes* and Click *Test*. This will open the Actions on Google simulator.
 1. Type `Talk to my test app` in the simulator, or say `OK Google, talk to my test app` to any Actions on Google enabled device signed into your developer account.
 
-### References & Issues
-+ Questions? Go to [StackOverflow](https://stackoverflow.com/questions/tagged/actions-on-google), [Actions on Google G+ Developer Community](https://g.co/actionsdev) or [Support](https://developers.google.com/actions/support/).
+## References & Issues
++ Questions? Go to [StackOverflow](https://stackoverflow.com/questions/tagged/actions-on-google), [Assistant Developer Community on Reddit](https://www.reddit.com/r/GoogleAssistantDev/) or [Support](https://developers.google.com/actions/support/).
 + For bugs, please report an issue on Github.
-+ Actions on Google [Webhook Boilerplate](https://github.com/actions-on-google/dialogflow-webhook-boilerplate-nodejs).
-+ [Codelabs](https://codelabs.developers.google.com/?cat=Assistant) for Actions on Google.
-+ Actions on Google [Documentation](https://developers.google.com/actions/extending-the-assistant).
-+ For more info on deploying with [Firebase](https://developers.google.com/actions/dialogflow/deploy-fulfillment).
-+ To learn more about [Google Maps Static API Billing](https://developers.google.com/maps/documentation/maps-static/usage-and-billing).
-
++ Actions on Google [Documentation](https://developers.google.com/actions/extending-the-assistant)
++ Actions on Google [Codelabs](https://codelabs.developers.google.com/?cat=Assistant).
++ [Webhook Boilerplate Template](https://github.com/actions-on-google/dialogflow-webhook-boilerplate-nodejs) for Actions on Google.
+ 
 ## Make Contributions
-Please read and follow the steps in the CONTRIBUTING.md
-
+Please read and follow the steps in the [CONTRIBUTING.md](CONTRIBUTING.md).
+ 
 ## License
-See LICENSE
-
+See [LICENSE](LICENSE).
+ 
 ## Terms
 Your use of this sample is subject to, and by using or downloading the sample files you agree to comply with, the [Google APIs Terms of Service](https://developers.google.com/terms/).
