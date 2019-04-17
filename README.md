@@ -1,45 +1,59 @@
 # Actions on Google: Name Psychic Sample
 
-This Node.js sample introduces permission requests for [user information](https://developers.google.com/actions/assistant/helpers#user_information) and
-demonstrates [surface transfer capabilities](https://developers.google.com/actions/assistant/surface-capabilities#multi-surface_conversations)
-when building Actions for Google Assistant and uses Google Maps Static API.
+This sample demonstrates Actions on Google features for use on Google Assistant including permission requests for [user information](https://developers.google.com/actions/assistant/helpers#user_information), [surface transfer capabilities](https://developers.google.com/actions/assistant/surface-capabilities#multi-surface_conversations), user storage, SSML, unrecognized deep link fallbacks, and Google Maps Static API -- using the [Node.js client library](https://github.com/actions-on-google/actions-on-google-nodejs) and deployed on [Cloud Functions for Firebase](https://firebase.google.com/docs/functions/).
+
+### Enable Billing
+**Required for running this sample**
+This sample uses Firebase Cloud Functions to make an HTTP request to Google Maps Static API. If you plan to run the sample, you will need to temporarily upgrade to a Firebase plan that allows for outbound networking, such as the [Blaze Plan](https://firebase.google.com/pricing/), also called Pay as you go.
 
 ## Setup Instructions
+### Prerequisites
+1. Node.js and NPM
+    + We recommend installing using [NVM](https://github.com/creationix/nvm)
+1. Install the [Firebase CLI](https://developers.google.com/actions/dialogflow/deploy-fulfillment)
+    + We recommend using version 6.5.0, `npm install -g firebase-tools@6.5.0`
+    + Run `firebase login` with your Google account
 
 ### Configuration
-**This sample uses Google Maps Static API and so requires [Pay as You Go](https://developers.google.com/maps/documentation/maps-static/usage-and-billing) billing enabled via the Google Cloud Platform console under your project.**
+#### Actions Console
+1. From the [Actions on Google Console](https://console.actions.google.com/), add a new project > **Create Project** > under **More options** > **Conversational**
+1. From the left navigation menu under **Build** > **Actions** > **Add Your First Action** > **BUILD** (this will bring you to the Dialogflow console) > Select language and time zone > **CREATE**.
+1. In the Dialogflow console, go to **Settings** ⚙ > **Export and Import** > **Restore from zip** using the `agent.zip` in this sample's directory.
 
-1. Use the [Actions on Google Console](https://console.actions.google.com) to add a new project with a name of your choosing and click *Create Project*.
-1. Scroll down to the *More Options* section, and click on the *Conversational* card.
-1. On the left navigation menu under *BUILD*, click on *Actions*. Click on *Add Your First Action* and choose your app's language(s).
-1. Select *Custom intent*, click *BUILD*. This will open a Dialogflow console. Click *CREATE*.
-1. Click on the gear icon to see the project settings.
-1. Select *Export and Import*.
-1. Select *Restore from zip*. Follow the directions to restore from the `agent.zip` file in this repo.
-1. Deploy the fulfillment webhook provided in the `functions` folder using [Google Cloud Functions for Firebase](https://firebase.google.com/docs/functions/):
-   1. Follow the instructions to [set up and initialize Firebase SDK for Cloud Functions](https://firebase.google.com/docs/functions/get-started#set_up_and_initialize_functions_sdk). Make sure to select the project that you have previously generated in the Actions on Google Console and to reply "N" when asked to overwrite existing files by the Firebase CLI.
-   1. Obtain an API Key for the Google Static Maps API following the [instructions](https://developers.google.com/maps/documentation/maps-static/intro).
-   1. Run the following command replacing `<THE_API_KEY>` with your API Key: `firebase functions:config:set maps.key=<THE API KEY>`
-   1. In the [Google Cloud Console API Library](https://console.cloud.google.com/apis/library), enable the Static Maps API and billing for your project.
-   1. Run `firebase deploy --only functions` and take note of the endpoint where the fulfillment webhook has been published. It should look like `Function URL (webhook): https://us-central1-YOUR_PROJECT.cloudfunctions.net/webhook`
-1. Go back to the Dialogflow console and select *Fulfillment* from the left navigation menu. Enable *Webhook*, set the value of *URL* to the `Function URL` from the previous step, then click *Save*.
-1. Select *Intents* from the left navigation menu. Select the `handle_permission` fallback intent, scroll down to the *Actions on Google* section, check *End Conversation*, then click *Save*.
-1. Select *Integrations* from the left navigation menu and open the *Settings* menu for Actions on Google.
-1. Enable *Auto-preview changes* and Click *Test*. This will open the Actions on Google simulator.
-1. Type `Talk to my test app` in the simulator, or say `OK Google, talk to my test app` to any Actions on Google enabled device signed into your developer account.
+#### Cloud Platform Console
+1. From the [Dialogflow console](https://console.dialogflow.com) > go to **Settings** ⚙ and under the `General` tab > go the `Project Id` link, which will take you to the **Google Cloud Platform** console
+1. In the Cloud console, go to **Menu ☰** > **APIs & Services** > **Library**
+1. Select select **Maps Static API** > **Enable**
+1. Under **Menu ☰** > **APIs & Services** > **Credentials** > **Create Credentials** > **API Key** and copy the key.
+
+#### Firebase Deployment
+1. On your local machine, in the `functions` directory, run `npm install`
+1. Run `firebase deploy --project {PROJECT_ID}`, replace `{PROJECT_ID}` to deploy the function
+    + To find your **Project ID**: In [Dialogflow console](https://console.dialogflow.com/) under **Settings** ⚙ > **General** tab > **Project ID**.
+1. Return to the [Dialogflow Console](https://console.dialogflow.com) > select **Fulfillment** > **Enable** Webhook > Set **URL** to the **Function URL** that was returned after the deploy command > **SAVE**.
+    ```
+    Function URL (dialogflowFirebaseFulfillment): https://${REGION}-${PROJECT_ID}.cloudfunctions.net/dialogflowFirebaseFulfillment
+    ```
+1. Run `firebase functions:config:set maps.key={API_KEY} --project {PROJECT_ID}`, replace `{API_KEY}` with the generated API key from earlier and redeploy the function.
+1. From the left navigation menu, select **Integrations** > **Integration Settings** under Google Assistant > Enable **Auto-preview changes** >  **Test** to open the Actions on Google simulator then say or type `Talk to my test app`.
+
+### Running this Sample
++ You can test your Action on any Google Assistant-enabled device on which the Assistant is signed into the same account used to create this project. Just say or type, “OK Google, talk to my test app”.
++ You can also use the Actions on Google Console simulator to test most features and preview on-device behavior.
 
 ## References & Issues
 + Questions? Go to [StackOverflow](https://stackoverflow.com/questions/tagged/actions-on-google), [Assistant Developer Community on Reddit](https://www.reddit.com/r/GoogleAssistantDev/) or [Support](https://developers.google.com/actions/support/).
 + For bugs, please report an issue on Github.
 + Actions on Google [Documentation](https://developers.google.com/actions/extending-the-assistant)
-+ Actions on Google [Codelabs](https://codelabs.developers.google.com/?cat=Assistant).
-+ [Webhook Boilerplate Template](https://github.com/actions-on-google/dialogflow-webhook-boilerplate-nodejs) for Actions on Google.
- 
++ Actions on Google [Codelabs](https://codelabs.developers.google.com/?cat=Assistant)
++ [Webhook Boilerplate Template](https://github.com/actions-on-google/dialogflow-webhook-boilerplate-nodejs) for Actions on Google
++ To learn more about [Google Maps Static API Billing](https://developers.google.com/maps/documentation/maps-static/usage-and-billing).
+
 ## Make Contributions
 Please read and follow the steps in the [CONTRIBUTING.md](CONTRIBUTING.md).
- 
+
 ## License
 See [LICENSE](LICENSE).
- 
+
 ## Terms
 Your use of this sample is subject to, and by using or downloading the sample files you agree to comply with, the [Google APIs Terms of Service](https://developers.google.com/terms/).

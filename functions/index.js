@@ -180,4 +180,4 @@ app.catch((conv, e) => {
   conv.close(responses.readMindError);
 });
 
-exports.webhook = functions.https.onRequest(app);
+exports.dialogflowFirebaseFulfillment = functions.https.onRequest(app);
