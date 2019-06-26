@@ -97,18 +97,18 @@ const responses = {
   notificationText: 'See you where you are...',
 };
 
- /**
-   * Shows the location of the user with a preference for a screen device.
-   * If on a speaker device, asks to transfer dialog to a screen device.
-   * Reads location from userStorage.
-   * @param {object} conv - The conversation instance.
-   * @return {Void}
-   */
+/**
+ * Shows the location of the user with a preference for a screen device.
+ * If on a speaker device, asks to transfer dialog to a screen device.
+ * Reads location from userStorage.
+ * @param {object} conv - The conversation instance.
+ * @return {Void}
+ */
 const showLocationOnScreen = (conv) => {
   const capability = 'actions.capability.SCREEN_OUTPUT';
   if (conv.surface.capabilities.has(capability) ||
     !conv.available.surfaces.capabilities.has(capability)) {
-    return conv.close(...responses.sayLocation(conv.user.storage.location));
+    return conv.close(...responses.sayLocation(userData(conv).location));
   }
   conv.ask(new NewSurface({
     context: responses.newSurfaceContext,
@@ -117,13 +117,34 @@ const showLocationOnScreen = (conv) => {
   }));
 };
 
+/**
+ * Depending on user verification status, save data either to dialog session
+ * (conv.data) or cross-session storage (conv.user.storage). Users must be
+ * verified to use cross-session storage, but it provides ideal UX.
+ * https://developers.google.com/actions/assistant/guest-users
+ * @param {object} conv - The conversation instance.
+ * @return {Object}
+ */
+const userData = (conv) => {
+  return conv.user.verification === 'VERIFIED' ? conv.user.storage : conv.data;
+};
+
 const app = dialogflow({debug: true});
 
 app.intent('Default Welcome Intent', (conv) => {
-  // conv.user.storage = {}
+  // userData(conv) = {}
   // Uncomment above to delete the cached permissions on each request
   // to force the app to request new permissions from the user
-  conv.ask(responses.greetUser);
+
+  // Location permissions only work for verified users
+  if (conv.user.verification === 'VERIFIED') {
+    conv.ask(responses.greetUser);
+  } else {
+    conv.ask(new Permission({
+      context: responses.permissionReason,
+      permissions: conv.data.requestedPermission,
+    }));
+  }
 });
 
 app.intent('Unrecognized Deep Link Fallback', (conv) => {
@@ -165,14 +186,14 @@ app.intent('handle_permission', (conv, params, permissionGranted) => {
     return conv.close(responses.sayName(conv.user.storage.name));
   }
   if (requestedPermission === 'DEVICE_COARSE_LOCATION') {
-    conv.user.storage.location = conv.device.location.city;
+    userData(conv).location = conv.device.location.city;
     return showLocationOnScreen(conv);
   }
   throw new Error('Unrecognized permission');
 });
 
 app.intent('new_surface', (conv) => {
-  conv.close(...responses.sayLocation(conv.user.storage.location));
+  conv.close(...responses.sayLocation(userData(conv).location));
 });
 
 app.catch((conv, e) => {
