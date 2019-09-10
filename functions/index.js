@@ -142,7 +142,7 @@ app.intent('Default Welcome Intent', (conv) => {
   } else {
     conv.ask(new Permission({
       context: responses.permissionReason,
-      permissions: conv.data.requestedPermission,
+      permissions: 'NAME',
     }));
   }
 });
