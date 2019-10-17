@@ -1,8 +1,8 @@
 # Actions on Google: Name Psychic Sample
 
-This sample demonstrates Actions on Google features for use on Google Assistant including permission requests for [user information](https://developers.google.com/actions/assistant/helpers#user_information), [surface transfer capabilities](https://developers.google.com/actions/assistant/surface-capabilities#multi-surface_conversations), user storage, SSML, unrecognized deep link fallbacks, and Google Maps Static API -- using the [Node.js client library](https://github.com/actions-on-google/actions-on-google-nodejs) and deployed on [Cloud Functions for Firebase](https://firebase.google.com/docs/functions/).
+This sample demonstrates Actions on Google features for use on Google Assistant including permission requests for [user information](https://developers.google.com/assistant/conversational/helpers#user_information), [surface transfer capabilities](https://developers.google.com/assistant/conversational/surface-capabilities#multi-surface_conversations), user storage, SSML, unrecognized deep link fallbacks, and Google Maps Static API -- using the [Node.js client library](https://github.com/actions-on-google/actions-on-google-nodejs) and deployed on [Cloud Functions for Firebase](https://firebase.google.com/docs/functions/).
 
-Note that if the user is not [verified](https://developers.google.com/actions/assistant/guest-users), their information will
+Note that if the user is not [verified](https://developers.google.com/assistant/conversational/save-data#determining_and_handling_user_verification_status), their information will
 never be saved across conversations and they will encounter a guest flow (requesting permission) each time.
 
 ### Enable Billing
@@ -14,7 +14,7 @@ This sample uses Firebase Cloud Functions to make an HTTP request to Google Maps
 ### Prerequisites
 1. Node.js and NPM
     + We recommend installing using [NVM](https://github.com/creationix/nvm)
-1. Install the [Firebase CLI](https://developers.google.com/actions/dialogflow/deploy-fulfillment)
+1. Install the [Firebase CLI](https://developers.google.com/assistant/actions/dialogflow/deploy-fulfillment)
     + We recommend using version 6.5.0, `npm install -g firebase-tools@6.5.0`
     + Run `firebase login` with your Google account
 
@@ -46,9 +46,9 @@ This sample uses Firebase Cloud Functions to make an HTTP request to Google Maps
 + You can also use the Actions on Google Console simulator to test most features and preview on-device behavior.
 
 ## References & Issues
-+ Questions? Go to [StackOverflow](https://stackoverflow.com/questions/tagged/actions-on-google), [Assistant Developer Community on Reddit](https://www.reddit.com/r/GoogleAssistantDev/) or [Support](https://developers.google.com/actions/support/).
++ Questions? Go to [StackOverflow](https://stackoverflow.com/questions/tagged/actions-on-google), [Assistant Developer Community on Reddit](https://www.reddit.com/r/GoogleAssistantDev/) or [Support](https://developers.google.com/assistant/support).
 + For bugs, please report an issue on Github.
-+ Actions on Google [Documentation](https://developers.google.com/actions/extending-the-assistant)
++ Actions on Google [Documentation](https://developers.google.com/assistant)
 + Actions on Google [Codelabs](https://codelabs.developers.google.com/?cat=Assistant)
 + [Webhook Boilerplate Template](https://github.com/actions-on-google/dialogflow-webhook-boilerplate-nodejs) for Actions on Google
 + To learn more about [Google Maps Static API Billing](https://developers.google.com/maps/documentation/maps-static/usage-and-billing).
